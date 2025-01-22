@@ -1,0 +1,79 @@
+name: GitHub Classroom Workflow
+
+on:
+  push:
+    branches:
+      - "*"
+      - "!badges"
+
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: dependencies-php-8.4-composer-${{ hashFiles('composer.json') }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, intl
+          coverage: none
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Download vnu checker
+        run: wget https://github.com/validator/validator/releases/download/latest/vnu.jar
+
+      - name: Run Nu Html Checker (v.Nu)
+        run: java -cp vnu.jar -Xss1024k -Dnu.validator.servlet.bind-address=127.0.0.1 nu.validator.servlet.Main 8888 &
+
+      - name: Install PHP dependencies
+        run: |
+          composer update --prefer-stable --prefer-dist --no-interaction
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # add id to action so outputs can be used
+      - uses: education/autograding@v1
+        id: autograder
+        continue-on-error: true
+
+      # switch to badges branch
+      - run: git checkout badges || git checkout -b badges
+
+      # create points bar
+      - name: points bar
+        uses: markpatterson27/points-bar@v1
+        with:
+          points: ${{ steps.autograder.outputs.points }}
+          path: ".github/badges/points-bar.svg"
+
+      # commit and push badges if badges have changed
+      - name: Commit changes to points bar
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add '.github/badges/points-bar.svg'
+          git commit -m "Add/Update points bar" || exit 0
+          git push -f origin badges

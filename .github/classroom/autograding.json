@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "PHPUnit HTMLUnitTester",
+      "setup": "",
+      "run": "./vendor/bin/phpunit tests/TestHTML.php",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 1
+    },
+    {
+      "name": "PyTest Selenium",
+      "setup": "",
+      "run": "pytest ./tests/test_exemple.py",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 10,
+      "points": 1
+    }
+  ]
+}
